@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Windy.sound | Professional Sound Finder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #0f0f0f, #1a1a1a);
+      color: #eee;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+      border-bottom: 1px solid #333;
+    }
+    header img {
+      width: 80px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      color: #00eaff;
+      text-shadow: 0 0 10px #00eaff99;
+    }
+    p.subheading {
+      font-size: 1rem;
+      color: #aaa;
+    }
+    form {
+      display: flex;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px 0 0 8px;
+      border: none;
+      font-size: 1rem;
+      background: #1e1e1e;
+      color: #fff;
+      border: 1px solid #00eaff33;
+    }
+    button {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      background: #00eaff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+    button:hover {
+      background: #00bcd4;
+    }
+    .results {
+      max-width: 800px;
+      margin: auto;
+      padding: 1rem;
+    }
+    .sound-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #00eaff22;
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 10px #00eaff11;
+      transition: transform 0.3s ease;
+    }
+    .sound-card:hover {
+      transform: scale(1.02);
+    }
+    .sound-title {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    audio {
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .meta {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin: 0.3rem 0;
+    }
+    .actions a, .copy-embed {
+      font-size: 0.9rem;
+      color: #00eaff;
+      margin-right: 10px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .embed-code {
+      width: 100%;
+      background: #000;
+      color: #0ff;
+      padding: 6px;
+      border: 1px solid #00eaff;
+      border-radius: 6px;
+      font-family: monospace;
+      margin-top: 0.5rem;
+    }
+    .tag-suggestions {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    .tag-suggestions span {
+      background: #222;
+      color: #00eaff;
+      padding: 5px 10px;
+      margin: 3px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: inline-block;
+    }
+    @media(max-width: 600px) {
+      form {
+        flex-direction: column;
+      }
+      input[type="text"], button {
+        border-radius: 8px;
+      }
+      button {
+        margin-top: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+ <a href="https://tfwindyimagegenrator.tiiny.site/">↑ IMAGE</button>
+<header>
+  <img src="https://i.ibb.co/RkKp4K7R/Picsart-25-04-12-05-39-51-307.png" alt="Windy.sound Logo">
+  <h1>Windy.sound</h1>
+  <p class="subheading">Search. Preview. Download. Embed. All in one place.</p>
+</header>
+
+<form id="search-form">
+  <input type="text" id="query" placeholder="Search sounds like wind, drop, laser..." required />
+  <button type="submit">Search</button>
+</form>
+
+<div class="tag-suggestions">
+  Try:
+  <span onclick="searchFromTag('wind')">wind</span>
+  <span onclick="searchFromTag('jump')">jump</span>
+  <span onclick="searchFromTag('explosion')">explosion</span>
+  <span onclick="searchFromTag('click')">click</span>
+  <span onclick="searchFromTag('bass')">bass</span>
+</div>
+
+<div class="results" id="results"></div>
+
+<script>
+  const API_KEY = 'e3lOu6OhYN4mEiwy0ey0dj9ccXn8heYQgrMPaNfs';
+  const form = document.getElementById('search-form');
+  const results = document.getElementById('results');
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const query = document.getElementById('query').value.trim();
+    if (query) searchSounds(query);
+  });
+
+  function searchFromTag(tag) {
+    document.getElementById('query').value = tag;
+    searchSounds(tag);
+  }
+
+  async function searchSounds(query) {
+    results.innerHTML = '<p style="text-align:center;">🔎 Searching Windy.sound...</p>';
+    const url = `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(query)}&token=${API_KEY}&page_size=10`;
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Error: ${res.status}`);
+      const data = await res.json();
+      const detailRequests = data.results.map(sound =>
+        fetch(`https://freesound.org/apiv2/sounds/${sound.id}/?token=${API_KEY}`).then(r => r.json())
+      );
+      const details = await Promise.all(detailRequests);
+      displaySounds(details);
+    } catch (err) {
+      results.innerHTML = `<p style="color:red; text-align:center;">❌ Error: ${err.message}</p>`;
+    }
+  }
+
+  function displaySounds(sounds) {
+    if (!sounds.length) {
+      results.innerHTML = '<p style="text-align:center;">No results found.</p>';
+      return;
+    }
+
+    results.innerHTML = '';
+    sounds.forEach(s => {
+      const previewUrl = s.previews['preview-hq-mp3'] || s.previews['preview-lq-mp3'];
+      const fileName = s.name.replace(/\s+/g, '_').toLowerCase();
+      const duration = s.duration.toFixed(1) + 's';
+      const size = (s.filesize / 1024 / 1024).toFixed(2) + ' MB';
+      const tags = s.tags.slice(0, 5).join(', ');
+      const license = s.license;
+
+      if (!previewUrl) return;
+
+      const div = document.createElement('div');
+      div.className = 'sound-card';
+      div.innerHTML = `
+        <div class="sound-title">${s.name}</div>
+        <audio controls src="${previewUrl}"></audio>
+        <div class="meta">🎵 Duration: ${duration} | 📁 Size: ${size} | 🏷️ Tags: ${tags} | 📜 License: ${license}</div>
+        <div class="actions">
+          <a href="${previewUrl}" download="${fileName}.mp3">⬇️ Direct Download</a>
+          <span class="copy-embed" onclick="copyEmbed('${previewUrl}')">📋 Copy Embed</span>
+        </div>
+        <textarea readonly class="embed-code"><iframe src="${previewUrl}" width="100%" height="60" style="border:none;" allow="autoplay"></iframe></textarea>
+      `;
+      results.appendChild(div);
+    });
+  }
+
+  function copyEmbed(url) {
+    const embed = `<iframe src="${url}" width="100%" height="60" style="border:none;" allow="autoplay"></iframe>`;
+    navigator.clipboard.writeText(embed).then(() => alert('✅ Embed code copied!'));
+  }
+</script>
+
+</body>
+</html>
